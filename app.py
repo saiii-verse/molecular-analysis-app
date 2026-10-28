@@ -1,10 +1,16 @@
 
 import streamlit as st
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem import Descriptors, Lipinski, rdMolDescriptors
-from rdkit.Chem import Draw
+import plotly.graph_objects as go
 
+from rdkit import Chem
+from rdkit.Chem import (
+    Descriptors,
+    Lipinski,
+    rdMolDescriptors,
+    AllChem,
+    Draw
+)
 # ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
