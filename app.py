@@ -1,256 +1,302 @@
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
 
+ import streamlit as st
+import pandas as pd
 from rdkit import Chem
-from rdkit.Chem import (
-    Descriptors,
-    Lipinski,
-    rdMolDescriptors,
-    AllChem,
-    Draw
-)
+from rdkit.Chem import Descriptors, Lipinski, rdMolDescriptors
+from rdkit.Chem import Draw
 
 # ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
-    page_title="Molecular Analysis Lab",
+    page_title="MolecuLab Pro",
     page_icon="🧬",
     layout="wide"
-)
-
-# ---------------- CUSTOM DESIGN ----------------
-
-st.markdown("""
-<style>
-.main-title {
-    font-size: 38px;
-    font-weight: 800;
-    text-align: center;
-    padding: 10px;
-}
-.subtitle {
-    text-align: center;
-    font-size: 17px;
-    color: #64748b;
-    margin-bottom: 25px;
-}
-div[data-testid="stMetric"] {
-    background: #f0f7ff;
-    padding: 15px;
-    border-radius: 12px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    '<div class="main-title">🧬 MolecuLab Pro</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="subtitle">'
-    'Explore molecular structures, properties and 3D models'
-    '</div>',
-    unsafe_allow_html=True
 )
 
 # ---------------- MOLECULE LIBRARY ----------------
 
 MOLECULES = {
-    "Caffeine": "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
-
-    "Aspirin": "CC(=O)Oc1ccccc1C(=O)O",
-
-    "Paracetamol": "CC(=O)NC1=CC=C(O)C=C1",
-
-    "Ibuprofen": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
-
-    "Glucose": "C(C1C(C(C(C(O1)O)O)O)O)O",
-
-    "Cholesterol":
-        "CC(C)CCCC(C)C1CCC2C1(CCC3C2CCC4"
-        "(C3(CCC4O)C)C)C",
-
-    "Quercetin":
-        "O=c1c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c2c1O",
-
-    "Nicotinamide": "NC(=O)c1cccnc1",
-
-    "Benzene": "c1ccccc1",
-
-    "Vitamin C": "O=C1OC(C(O)CO)C(O)=C1O"
+    "Aspirin": {
+        "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+        "category": "Drug"
+    },
+    "Paracetamol": {
+        "smiles": "CC(=O)Nc1ccc(O)cc1",
+        "category": "Drug"
+    },
+    "Ibuprofen": {
+        "smiles": "CC(C)Cc1ccc(cc1)[C@@H](C)C(=O)O",
+        "category": "Drug"
+    },
+    "Caffeine": {
+        "smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
+        "category": "Drug"
+    },
+    "Amoxicillin": {
+        "smiles": "CC1(C(N2C(S1)C(C2=O)NC(=O)C(C3=CC=C(C=C3)O)N)C(=O)O)C",
+        "category": "Drug"
+    },
+    "Metformin": {
+        "smiles": "CN(C)C(=N)NC(=N)N",
+        "category": "Drug"
+    },
+    "Omeprazole": {
+        "smiles": "COc1ccc2nc(sc2c1)S(=O)Cc1ncc(C)c(OC)c1C",
+        "category": "Drug"
+    },
+    "Atorvastatin": {
+        "smiles": "CC(C)c1c(C(=O)Nc2ccccc2)c(-c2ccc(F)cc2)nc2cc(-c3ccccc3)nn12",
+        "category": "Drug"
+    },
+    "Ciprofloxacin": {
+        "smiles": "O=C(O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O",
+        "category": "Drug"
+    },
+    "Fluconazole": {
+        "smiles": "OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F",
+        "category": "Drug"
+    },
+    "Dexamethasone": {
+        "smiles": "C[C@]12C[C@H](O)[C@@]3(C(=O)CO)C(=O)C=C4[C@@H]([C@@H](O)C[C@]4(C)[C@@]3(F)[C@@H]1CC[C@@H]2O)C",
+        "category": "Drug"
+    },
+    "Penicillin G": {
+        "smiles": "CC1(C)S[C@@H]2[C@H](NC(=O)Cc3ccccc3)C(=O)N2[C@@H]1C(=O)O",
+        "category": "Drug"
+    },
+    "Naproxen": {
+        "smiles": "COc1ccc2cc(ccc2c1)[C@@H](C)C(=O)O",
+        "category": "Drug"
+    },
+    "Diclofenac": {
+        "smiles": "O=C(O)Cc1ccccc1Nc1c(Cl)cccc1Cl",
+        "category": "Drug"
+    },
+    "Lidocaine": {
+        "smiles": "CCN(CC)CC(=O)Nc1c(C)cccc1C",
+        "category": "Drug"
+    },
+    "Vitamin C": {
+        "smiles": "OCC(O)C1OC(=O)C(O)=C1O",
+        "category": "Vitamin"
+    },
+    "Vitamin B6": {
+        "smiles": "Cc1ncc(CO)c(CO)c1O",
+        "category": "Vitamin"
+    },
+    "Glucose": {
+        "smiles": "OCC1OC(O)C(O)C(O)C1O",
+        "category": "Biomolecule"
+    },
+    "Cholesterol": {
+        "smiles": "CC(C)CCCC(C)C1CCC2C1(CCC3C2CCC4(C3CCC4O)C)C",
+        "category": "Biomolecule"
+    },
+    "Dopamine": {
+        "smiles": "NCCc1ccc(O)c(O)c1",
+        "category": "Biomolecule"
+    },
+    "Serotonin": {
+        "smiles": "NCCc1c[nH]c2ccc(O)cc12",
+        "category": "Biomolecule"
+    },
+    "Adenine": {
+        "smiles": "Nc1ncnc2[nH]cnc12",
+        "category": "Biomolecule"
+    },
+    "Glycine": {
+        "smiles": "NCC(=O)O",
+        "category": "Biomolecule"
+    },
+    "Nicotinamide": {
+        "smiles": "NC(=O)c1cccnc1",
+        "category": "Biomolecule"
+    },
+    "Urea": {
+        "smiles": "NC(N)=O",
+        "category": "Chemical"
+    },
+    "Benzene": {
+        "smiles": "c1ccccc1",
+        "category": "Chemical"
+    },
+    "Curcumin": {
+        "smiles": "COc1cc(/C=C/C(=O)CC(=O)/C=C/c2ccc(O)c(OC)c2)ccc1O",
+        "category": "Natural Product"
+    },
+    "Quercetin": {
+        "smiles": "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+        "category": "Natural Product"
+    },
+    "Resveratrol": {
+        "smiles": "Oc1ccc(/C=C/c2cc(O)cc(O)c2)cc1",
+        "category": "Natural Product"
+    },
+    "Glutathione": {
+        "smiles": "N[C@@H](CCC(=O)N[C@@H](CS)C(=O)NCC(=O)O)C(=O)O",
+        "category": "Biomolecule"
+    },
+    "ATP": {
+        "smiles": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "category": "Biomolecule"
+    }
 }
 
-# ---------------- PROPERTY CALCULATOR ----------------
+# ---------------- HEADER ----------------
 
-def analyze_smiles(smiles):
+st.title("🧬 MolecuLab Pro")
+st.subheader("Advanced Molecular & Drug Property Analyzer")
 
-    mol = Chem.MolFromSmiles(smiles.strip())
+st.write(
+    "Explore molecular structures, calculate chemical descriptors, "
+    "and compare different molecules."
+)
+
+st.info(
+    "Research and educational tool. Calculated properties are "
+    "not proof of drug safety or clinical effectiveness."
+)
+
+# ---------------- SIDEBAR ----------------
+
+st.sidebar.title("🔬 Molecule Explorer")
+
+category = st.sidebar.selectbox(
+    "Choose category",
+    ["All", "Drug", "Vitamin", "Biomolecule",
+     "Chemical", "Natural Product"]
+)
+
+search = st.sidebar.text_input("🔍 Search molecule")
+
+available = [
+    name for name, data in MOLECULES.items()
+    if (category == "All" or data["category"] == category)
+    and search.lower() in name.lower()
+]
+
+if not available:
+    st.warning("No molecules found. Try another search.")
+    st.stop()
+
+selected = st.sidebar.selectbox(
+    "Select molecule",
+    available
+)
+
+# ---------------- ANALYSIS FUNCTION ----------------
+
+def analyze_molecule(name, smiles):
+    mol = Chem.MolFromSmiles(smiles)
 
     if mol is None:
         return None, None
 
-    formula = rdMolDescriptors.CalcMolFormula(mol)
-    mw = Descriptors.MolWt(mol)
-    exact_mass = Descriptors.ExactMolWt(mol)
-    logp = Descriptors.MolLogP(mol)
-    tpsa = Descriptors.TPSA(mol)
-    hbd = Lipinski.NumHDonors(mol)
-    hba = Lipinski.NumHAcceptors(mol)
-    rotatable = Lipinski.NumRotatableBonds(mol)
-    heavy_atoms = mol.GetNumHeavyAtoms()
-    rings = rdMolDescriptors.CalcNumRings(mol)
-    aromatic_rings = (
-        rdMolDescriptors.CalcNumAromaticRings(mol)
-    )
-    fraction_csp3 = Descriptors.FractionCSP3(mol)
-    formal_charge = Chem.GetFormalCharge(mol)
-
-    violations = sum([
-        mw > 500,
-        logp > 5,
-        hbd > 5,
-        hba > 10
-    ])
-
-    data = {
-        "Molecular Formula": formula,
-        "Molecular Weight (g/mol)": round(mw, 3),
-        "Exact Mass (Da)": round(exact_mass, 4),
-        "LogP": round(logp, 3),
-        "TPSA (Å²)": round(tpsa, 3),
-        "H-Bond Donors": hbd,
-        "H-Bond Acceptors": hba,
-        "Rotatable Bonds": rotatable,
-        "Heavy Atoms": heavy_atoms,
-        "Total Rings": rings,
-        "Aromatic Rings": aromatic_rings,
-        "Fraction Csp3": round(fraction_csp3, 3),
-        "Formal Charge": formal_charge,
-        "Lipinski Violations": violations,
+    props = {
+        "Molecule": name,
+        "Molecular Formula": rdMolDescriptors.CalcMolFormula(mol),
+        "Molecular Weight": round(Descriptors.MolWt(mol), 2),
+        "Exact Mass": round(Descriptors.ExactMolWt(mol), 4),
+        "LogP": round(Descriptors.MolLogP(mol), 3),
+        "TPSA (Å²)": round(
+            rdMolDescriptors.CalcTPSA(mol), 2
+        ),
+        "H-Bond Donors": Lipinski.NumHDonors(mol),
+        "H-Bond Acceptors": Lipinski.NumHAcceptors(mol),
+        "Rotatable Bonds": Lipinski.NumRotatableBonds(mol),
+        "Heavy Atoms": mol.GetNumHeavyAtoms(),
+        "Total Atoms": mol.GetNumAtoms(),
+        "Ring Count": Lipinski.RingCount(mol),
+        "Formal Charge": sum(
+            atom.GetFormalCharge() for atom in mol.GetAtoms()
+        ),
+        "Molecular Refractivity": round(
+            Descriptors.MolMR(mol), 2
+        ),
+        "Fraction Csp3": round(
+            rdMolDescriptors.CalcFractionCSP3(mol), 3
+        ),
         "Canonical SMILES": Chem.MolToSmiles(mol)
     }
 
-    return mol, data
+    # Simple Lipinski Rule of Five screen
+    violations = sum([
+        props["Molecular Weight"] > 500,
+        props["LogP"] > 5,
+        props["H-Bond Donors"] > 5,
+        props["H-Bond Acceptors"] > 10
+    ])
 
+    props["Lipinski Violations"] = violations
+    props["Lipinski Screen"] = (
+        "Passes basic screen" if violations == 0
+        else f"{violations} rule violation(s)"
+    )
 
-# ---------------- SIDEBAR ----------------
-
-st.sidebar.title("🔬 Navigation")
-
-st.sidebar.info(
-    "A cheminformatics tool for educational "
-    "molecular analysis."
-)
-
-st.sidebar.caption(
-    "Properties are calculated using RDKit."
-)
+    return mol, props
 
 # ---------------- TABS ----------------
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3 = st.tabs([
     "🧪 Analyze",
-    "📚 Molecule Library",
-    "⚖️ Compare",
-    "ℹ️ About"
+    "⚗️ Custom SMILES",
+    "📊 Compare Molecules"
 ])
 
-# ---------------- ANALYZE ----------------
+# ---------------- TAB 1 ----------------
 
 with tab1:
+    data = MOLECULES[selected]
 
-    st.subheader("Analyze a Molecule")
-
-    selected = st.selectbox(
-        "Choose an example or select Custom",
-        ["Custom"] + list(MOLECULES.keys())
+    mol, props = analyze_molecule(
+        selected, data["smiles"]
     )
 
-    if selected == "Custom":
-        default_smiles = ""
-    else:
-        default_smiles = MOLECULES[selected]
+    st.header(f"🔬 {selected}")
+    st.caption(f"Category: {data['category']}")
 
-    smiles = st.text_area(
-        "Enter SMILES",
-        value=default_smiles,
-        height=90,
-        placeholder="Paste a valid SMILES string..."
-    )
+    if mol is not None:
+        col1, col2 = st.columns([1, 1])
 
-    if st.button(
-        "🔍 Analyze Molecule",
-        type="primary",
-        use_container_width=True
-    ):
+        with col1:
+            st.subheader("2D Molecular Structure")
 
-        if not smiles.strip():
-            st.warning("Please enter a SMILES string.")
+            image = Draw.MolToImage(
+                mol,
+                size=(500, 400),
+                kekulize=True
+            )
 
-        else:
+            st.image(image, use_container_width=True)
 
-            mol, data = analyze_smiles(smiles)
+        with col2:
+            st.subheader("Key Properties")
 
-            if mol is None:
-                st.error(
-                    "Invalid SMILES. Please check your input."
-                )
+            st.metric(
+                "Molecular Weight",
+                f"{props['Molecular Weight']} g/mol"
+            )
 
-            else:
+            st.metric(
+                "Molecular Formula",
+                props["Molecular Formula"]
+            )
 
-                st.session_state["mol_data"] = data
-                st.session_state["mol_smiles"] = smiles
+            st.metric("LogP", props["LogP"])
+            st.metric("TPSA", f"{props['TPSA (Å²)']} Å²")
 
-                st.success("Molecule analyzed successfully!")
-
-    if "mol_data" in st.session_state:
-
-        data = st.session_state["mol_data"]
-        smiles_used = st.session_state["mol_smiles"]
-
-        mol, _ = analyze_smiles(smiles_used)
+            st.metric(
+                "Heavy Atoms",
+                props["Heavy Atoms"]
+            )
 
         st.divider()
-        st.subheader("📐 2D Molecular Structure")
+        st.subheader("📊 Complete Molecular Properties")
 
-        st.image(
-            Draw.MolToImage(mol, size=(650, 400)),
-            use_container_width=True
+        property_df = pd.DataFrame(
+            list(props.items()),
+            columns=["Property", "Value"]
         )
-
-        st.subheader("📊 Key Properties")
-
-        c1, c2, c3 = st.columns(3)
-
-        c1.metric(
-            "Molecular Weight",
-            f'{data["Molecular Weight (g/mol)"]:.2f}'
-        )
-
-        c2.metric(
-            "LogP",
-            f'{data["LogP"]:.2f}'
-        )
-
-        c3.metric(
-            "TPSA",
-            f'{data["TPSA (Å²)"]:.2f} Å²'
-        )
-
-        c4, c5, c6 = st.columns(3)
-
-        c4.metric("H-Bond Donors", data["H-Bond Donors"])
-        c5.metric("H-Bond Acceptors", data["H-Bond Acceptors"])
-        c6.metric("Rotatable Bonds", data["Rotatable Bonds"])
-
-        st.subheader("🧬 Complete Property Report")
-
-        property_df = pd.DataFrame({
-            "Property": list(data.keys()),
-            "Value": list(data.values())
-        })
 
         st.dataframe(
             property_df,
@@ -258,314 +304,154 @@ with tab1:
             hide_index=True
         )
 
-        st.subheader("💊 Lipinski Rule of Five")
-
-        st.write(
-            "Number of rule limits exceeded:",
-            data["Lipinski Violations"]
-        )
-
-        if data["Lipinski Violations"] == 0:
-            st.success(
-                "No Lipinski Rule of Five violations."
-            )
-        else:
-            st.warning(
-                "One or more Lipinski limits are exceeded."
-            )
+        st.subheader("💊 Drug-likeness Screening")
+        st.write(props["Lipinski Screen"])
 
         st.caption(
-            "This screening rule does not establish "
-            "drug safety or effectiveness."
+            "Lipinski screening is a simplified guideline. "
+            "Passing it does not establish that a molecule "
+            "is a medicine or is safe."
         )
 
         st.download_button(
-            "⬇️ Download Full Report (CSV)",
+            "📥 Download Properties as CSV",
             data=property_df.to_csv(index=False).encode("utf-8"),
-            file_name="molecular_analysis.csv",
-            mime="text/csv",
-            use_container_width=True
+            file_name=f"{selected.replace(' ', '_')}_properties.csv",
+            mime="text/csv"
         )
 
-        # ---------------- 3D STRUCTURE ----------------
+# ---------------- TAB 2 ----------------
 
-        st.divider()
-        st.subheader("🌐 3D Molecular Structure")
+with tab2:
+    st.header("⚗️ Analyze Your Own Molecule")
 
-        if st.button("Generate 3D Model"):
+    st.write(
+        "Paste a valid SMILES string to calculate its "
+        "molecular properties."
+    )
 
-            if mol.GetNumHeavyAtoms() > 150:
-                st.warning(
-                    "3D generation is limited to molecules "
-                    "with at most 150 heavy atoms in this demo."
+    custom_name = st.text_input(
+        "Molecule name",
+        value="Custom Molecule"
+    )
+
+    custom_smiles = st.text_area(
+        "Enter SMILES",
+        placeholder="Example: CC(=O)Oc1ccccc1C(=O)O"
+    )
+
+    if st.button("Analyze Custom Molecule"):
+        if not custom_smiles.strip():
+            st.warning("Please enter a SMILES string.")
+
+        else:
+            custom_mol, custom_props = analyze_molecule(
+                custom_name.strip() or "Custom Molecule",
+                custom_smiles.strip()
+            )
+
+            if custom_mol is None:
+                st.error(
+                    "Invalid SMILES. Please check your input."
                 )
 
             else:
+                st.subheader("2D Structure")
 
-                mol3d = Chem.AddHs(mol)
-
-                params = AllChem.ETKDGv3()
-                params.randomSeed = 42
-
-                result = AllChem.EmbedMolecule(
-                    mol3d,
-                    params
+                custom_image = Draw.MolToImage(
+                    custom_mol,
+                    size=(500, 400)
                 )
 
-                if result != 0:
-                    st.error(
-                        "3D coordinates could not be generated."
-                    )
+                st.image(
+                    custom_image,
+                    use_container_width=True
+                )
 
-                else:
+                st.subheader("Molecular Properties")
 
-                    AllChem.MMFFOptimizeMolecule(mol3d)
+                st.dataframe(
+                    pd.DataFrame(
+                        list(custom_props.items()),
+                        columns=["Property", "Value"]
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
 
-                    conf = mol3d.GetConformer()
+                st.download_button(
+                    "📥 Download Custom Molecule CSV",
+                    data=pd.DataFrame(
+                        list(custom_props.items()),
+                        columns=["Property", "Value"]
+                    ).to_csv(index=False).encode("utf-8"),
+                    file_name="custom_molecule.csv",
+                    mime="text/csv"
+                )
 
-                    xyz = [
-                        conf.GetAtomPosition(i)
-                        for i in range(mol3d.GetNumAtoms())
-                    ]
-
-                    fig = go.Figure()
-
-                    # Draw bonds
-                    for bond in mol3d.GetBonds():
-
-                        a = bond.GetBeginAtomIdx()
-                        b = bond.GetEndAtomIdx()
-
-                        fig.add_trace(go.Scatter3d(
-                            x=[xyz[a].x, xyz[b].x, None],
-                            y=[xyz[a].y, xyz[b].y, None],
-                            z=[xyz[a].z, xyz[b].z, None],
-                            mode="lines",
-                            line=dict(width=5),
-                            hoverinfo="skip",
-                            showlegend=False
-                        ))
-
-                    # Draw atoms
-                    fig.add_trace(go.Scatter3d(
-                        x=[p.x for p in xyz],
-                        y=[p.y for p in xyz],
-                        z=[p.z for p in xyz],
-                        mode="markers+text",
-                        text=[
-                            atom.GetSymbol()
-                            for atom in mol3d.GetAtoms()
-                        ],
-                        textposition="top center",
-                        marker=dict(
-                            size=6,
-                            color=[
-                                atom.GetAtomicNum()
-                                for atom in mol3d.GetAtoms()
-                            ],
-                            colorscale="Viridis"
-                        ),
-                        hovertext=[
-                            f"Atom {i}: "
-                            f"{mol3d.GetAtomWithIdx(i).GetSymbol()}"
-                            for i in range(mol3d.GetNumAtoms())
-                        ],
-                        hoverinfo="text",
-                        showlegend=False
-                    ))
-
-                    fig.update_layout(
-                        height=500,
-                        scene=dict(
-                            xaxis_title="X",
-                            yaxis_title="Y",
-                            zaxis_title="Z",
-                            aspectmode="data"
-                        ),
-                        margin=dict(l=0, r=0, t=20, b=0)
-                    )
-
-                    st.plotly_chart(
-                        fig,
-                        use_container_width=True
-                    )
-
-                    st.caption(
-                        "Computed 3D conformer; not an "
-                        "experimentally determined structure."
-                    )
-
-
-# ---------------- MOLECULE LIBRARY ----------------
-
-with tab2:
-
-    st.subheader("📚 Molecule Library")
-
-    st.write(
-        "Choose a molecule to view its basic properties."
-    )
-
-    library_name = st.selectbox(
-        "Select a molecule",
-        list(MOLECULES.keys()),
-        key="library_choice"
-    )
-
-    if st.button("View Molecule Properties"):
-
-        lib_mol, lib_data = analyze_smiles(
-            MOLECULES[library_name]
-        )
-
-        if lib_mol is not None:
-
-            st.subheader(library_name)
-
-            st.image(
-                Draw.MolToImage(lib_mol, size=(500, 350)),
-                use_container_width=True
-            )
-
-            st.write(
-                "Molecular Formula:",
-                lib_data["Molecular Formula"]
-            )
-
-            st.write(
-                "Molecular Weight:",
-                lib_data["Molecular Weight (g/mol)"],
-                "g/mol"
-            )
-
-            st.write(
-                "Exact Mass:",
-                lib_data["Exact Mass (Da)"],
-                "Da"
-            )
-
-            st.write(
-                "LogP:",
-                lib_data["LogP"]
-            )
-
-            st.write(
-                "TPSA:",
-                lib_data["TPSA (Å²)"],
-                "Å²"
-            )
-
-            st.code(MOLECULES[library_name])
-
-
-# ---------------- COMPARE MOLECULES ----------------
+# ---------------- TAB 3 ----------------
 
 with tab3:
+    st.header("📊 Compare Molecules")
 
-    st.subheader("⚖️ Compare Two Molecules")
-
-    option_names = list(MOLECULES.keys())
-
-    left, right = st.columns(2)
-
-    with left:
-
-        mol_a_name = st.selectbox(
-            "First molecule",
-            option_names,
-            index=0
-        )
-
-    with right:
-
-        mol_b_name = st.selectbox(
-            "Second molecule",
-            option_names,
-            index=1
-        )
-
-    if st.button(
-        "Compare Molecules",
-        type="primary"
-    ):
-
-        _, data_a = analyze_smiles(
-            MOLECULES[mol_a_name]
-        )
-
-        _, data_b = analyze_smiles(
-            MOLECULES[mol_b_name]
-        )
-
-        compare_keys = [
-            "Molecular Formula",
-            "Molecular Weight (g/mol)",
-            "Exact Mass (Da)",
-            "LogP",
-            "TPSA (Å²)",
-            "H-Bond Donors",
-            "H-Bond Acceptors",
-            "Rotatable Bonds",
-            "Heavy Atoms",
-            "Total Rings",
-            "Aromatic Rings",
-            "Lipinski Violations"
-        ]
-
-        comparison = pd.DataFrame({
-            "Property": compare_keys,
-            mol_a_name: [data_a[k] for k in compare_keys],
-            mol_b_name: [data_b[k] for k in compare_keys]
-        })
-
-        st.dataframe(
-            comparison,
-            use_container_width=True,
-            hide_index=True
-        )
-
-        st.download_button(
-            "Download Comparison CSV",
-            comparison.to_csv(index=False).encode("utf-8"),
-            "molecule_comparison.csv",
-            "text/csv"
-        )
-
-
-# ---------------- ABOUT ----------------
-
-with tab4:
-
-    st.subheader("About This Project")
-
-    st.write("""
-    Molecular Analysis Lab is an educational
-    cheminformatics application built with Python,
-    Streamlit and RDKit.
-
-    Features include:
-
-    - Molecular structure visualization
-    - Chemical descriptor calculations
-    - Lipinski Rule of Five screening
-    - 3D conformer generation
-    - Molecule library
-    - Molecular property comparison
-    - CSV report downloads
-    """)
-
-    st.info(
-        "This application analyzes valid molecular SMILES. "
-        "Protein and DNA sequence analysis requires "
-        "additional specialized tools."
+    compare_names = st.multiselect(
+        "Select 2–5 molecules",
+        list(MOLECULES.keys()),
+        default=["Aspirin", "Paracetamol"]
     )
 
-    st.caption(
-        "Designed for educational and research exploration."
-    )
+    if st.button("Compare Selected Molecules"):
+        if len(compare_names) < 2:
+            st.warning("Please select at least two molecules.")
+
+        elif len(compare_names) > 5:
+            st.warning("Please select no more than five molecules.")
+
+        else:
+            comparison = []
+
+            for name in compare_names:
+                mol, props = analyze_molecule(
+                    name,
+                    MOLECULES[name]["smiles"]
+                )
+
+                if props:
+                    comparison.append(props)
+
+            if comparison:
+                comparison_df = pd.DataFrame(comparison)
+                comparison_df = comparison_df.set_index("Molecule").T
+
+                st.dataframe(
+                    comparison_df,
+                    use_container_width=True
+                )
+
+                chart_data = pd.DataFrame(comparison)
+
+                st.subheader("Molecular Weight Comparison")
+
+                st.bar_chart(
+                    chart_data.set_index("Molecule")[
+                        ["Molecular Weight"]
+                    ]
+                )
+
+                st.download_button(
+                    "📥 Download Comparison CSV",
+                    data=pd.DataFrame(comparison).to_csv(
+                        index=False
+                    ).encode("utf-8"),
+                    file_name="molecule_comparison.csv",
+                    mime="text/csv"
+                )
+
+# ---------------- FOOTER ----------------
 
 st.divider()
 
 st.caption(
-    "MolecuLab Pro | Python • Streamlit • RDKit"
-)
+    "MolecuLab Pro | Molecular Chemistry & Computational "
+    "Drug Research | Educational Use"
+)       
