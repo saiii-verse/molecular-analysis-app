@@ -44,7 +44,7 @@ div[data-testid="stMetric"] {
 """, unsafe_allow_html=True)
 
 st.markdown(
-    '<div class="main-title">🧬 Molecular Analysis Lab</div>',
+    '<div class="main-title">🧬 MolecuLab Pro</div>',
     unsafe_allow_html=True
 )
 
@@ -567,5 +567,5 @@ with tab4:
 st.divider()
 
 st.caption(
-    "Molecular Analysis Lab | Python • Streamlit • RDKit"
+    "MolecuLab Pro | Python • Streamlit • RDKit"
 )
